@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ppln-heparim"
+version = "0.0.0"
+dependencies = [
+  'dbdicom',
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

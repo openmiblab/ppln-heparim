@@ -1,0 +1,27 @@
+{
+  "title": "The HEPARIM study",
+  "upload_type": "software",
+  "description": "See the README on GitHub: https://github.com/openmiblab/ppln-heparim",
+  "creators": [
+    {
+      "name": "Sourbron, Steven",
+      "affiliation": "University of Sheffield"
+    }
+  ],
+  "keywords": ["biomarkers", "imaging"],
+  "license": "Apache-2.0",
+  "version": "v0.0.0",
+  "publication_date": "2026-02-25",
+  "related_identifiers": [
+    {
+      "relation": "isSupplementTo",
+      "identifier": "https://github.com/openmiblab/ppln-heparim"
+    }
+  ],
+  "url": "https://miblab.org",
+  "communities": [
+    {
+      "identifier": "miblab"
+    }
+  ]
+}
