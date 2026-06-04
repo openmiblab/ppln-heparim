@@ -1,0 +1,5 @@
+{
+  "DEFAULT_BASE_DRIVE": "G:\\Shared drives\\HEPARIM\\Patients 001-029",
+  "DEFAULT_OUTPUT_BASE": "X:\\abdominal_imaging\\Shared\\HEPARIMTS\\batch_processing",
+  "DEFAULT_PATIENT_LIST": "001, 004, 005"
+}

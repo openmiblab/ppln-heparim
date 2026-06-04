@@ -1,0 +1,14 @@
+pydicom
+dicom2nifti
+totalsegmentator
+SimpleITK
+numpy
+pandas
+scipy
+napari
+matplotlib
+zarr
+ants-imaging
+mdreg
+dcmri
+tqdm
