@@ -78,6 +78,19 @@ Extracts regional signal-time dynamics across segmented ROIs[cite: 3].
 
 these three methods are found in regestration.py
 
+There are additional methods to load the dicoms as zarray and to save the zarray as nift:
+get_precise_seconds
+
+extract_dicom_metadata
+
+group_and_validate_phases
+
+create_zarr_volume
+
+populate_4d_volume
+
+save_zarr_as_4d_nifti
+
 # GadoxateAnalysis
 
 This this the gadoxate analysis model to each segment and the whole liver for aorta and dual input using the following:
@@ -91,7 +104,7 @@ This this the gadoxate analysis model to each segment and the whole liver for ao
     title_prefix: str = ""
 ) -> Any
 Instantiates and executes parametric modeling routines via standard dcmri engines[cite: 1].
-from modelling 
+from modelling.py
 
 example output for whole liver:
 
