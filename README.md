@@ -14,7 +14,7 @@ This uses a GUI to find the files it then loops through using
     roi_subset: Any | None = None
 )
 from segmentation.py
-to run total segmentor to segment each image into the each of the segments
+to run total segmentor to segment each image into each of the segments
 (function) def create_multi_organ_mosaic(
     image_path: Any,
     liver_path: Any,
@@ -93,7 +93,7 @@ save_zarr_as_4d_nifti
 
 # GadoxateAnalysis
 
-This this the gadoxate analysis model to each segment and the whole liver for aorta and dual input using the following:
+This applies the gadoxate analysis model to each segment and the whole liver for aorta and dual input using the following:
 
 (function) def run_pharmacokinetic_fit(
     model_type: Any,
