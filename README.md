@@ -30,7 +30,7 @@ eg
 
 # RawSignalExtractionPipeline
 
-This extracts the time corse from the pre and post dicom for each segment saving it as a csv
+This extracts the time course from the pre and post dicom for each segment saving it as a csv
 
 The following function is used to extract the time course:
 (function) def extract_raw_time_course(
@@ -76,7 +76,7 @@ Registers a 4D moving array to a static reference image volume-by-volume using A
 ) -> DataFrame
 Extracts regional signal-time dynamics across segmented ROIs[cite: 3].
 
-these three methods are found in regestration.py
+these three methods are found in registration.py
 
 There are additional methods to load the dicoms as zarray and to save the zarray as nift:
 get_precise_seconds
