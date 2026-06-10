@@ -1,24 +1,20 @@
-ants
-collections
-concurrent.futures
-dcmri
-dicom2nifti
-gc
-glob
-json
-logging
-matplotlib
-mdreg
-napari
-numpy
-os
-pandas
-pydicom
-SimpleITK
-sys
-tempfile
-tkinter
-totalsegmentator
-tqdm
-zarr
-zipfile
+# --- Medical Imaging & Processing ---
+antspyx>=0.3.8      # Note: The pip package for 'ants' is 'antspyx'
+pydicom>=2.4.0
+dicom2nifti>=2.4.8
+SimpleITK>=2.3.0
+totalsegmentator>=2.0.0
+mdreg>=0.3.0
+dcmri>=0.2.0
+
+# --- Array & Data Handling ---
+numpy>=1.22.0,<1.27.0
+pandas>=2.0.0
+zarr>=2.16.0
+
+# --- Visualization & UI ---
+matplotlib>=3.7.0
+napari[all]>=0.4.18
+
+# --- Utilities ---
+tqdm>=4.65.0
