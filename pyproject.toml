@@ -6,31 +6,20 @@ build-backend = "setuptools.build_meta"
 name = "ppln-heparim"
 version = "0.0.0"
 dependencies = [
-  'dbdicom',
-  'ants',
-  'collections',
-  'concurrent.futures',
-  'dcmri',
-  'dicom2nifti',
-  'gc',
-  'glob',
-  'json',
-  'logging',
-  'matplotlib',
-  'mdreg',
-  'napari',
-  'numpy',
-  'os',
-  'pandas',
-  'pydicom',
-  'SimpleITK',
-  'sys',
-  'tempfile',
-  'tkinter',
-  'totalsegmentator',
-  'tqdm',
-  'zarr',
-  'zipfile'
+  "dbdicom",
+  "antspyx",          # Fixed: PyPI package name for ants is 'antspyx'
+  "dcmri",
+  "dicom2nifti",
+  "matplotlib",
+  "mdreg",
+  "napari[all]",      # Enhanced: [all] ensures UI/Qt backends are installed
+  "numpy",
+  "pandas",
+  "pydicom",
+  "SimpleITK",
+  "totalsegmentator",
+  "tqdm",
+  "zarr"
 ]
 
 [tool.setuptools.packages.find]
