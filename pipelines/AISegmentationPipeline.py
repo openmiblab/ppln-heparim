@@ -1,3 +1,5 @@
+"""Perform TotalSegmentator segmentation"""
+
 import os
 import sys
 import glob

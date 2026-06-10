@@ -1,3 +1,5 @@
+"""Performs modelling on the extracted time curves"""
+
 import os
 import sys
 import glob

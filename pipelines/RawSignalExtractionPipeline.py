@@ -1,3 +1,5 @@
+"""Extract time course data without registration"""
+
 import os
 import sys
 import glob

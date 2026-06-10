@@ -1,3 +1,8 @@
+"""Work in progress module on coregistration of dynamic images to remove motion
+
+Needs testing on full datasets.
+"""
+
 import os
 import sys
 import glob
