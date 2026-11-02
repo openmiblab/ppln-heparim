@@ -1,4 +1,8 @@
 # Analysis pipeline for the heparim study
+
+## MY CHANGES
+
+
 The Pipeline consists of 4 parts
 1) AISegmentationPipeline: Loads the dicom data and segments the liver into the 8 segments as well as creating a segment for the aorta and hepatic vein
 2) RawSignalExtractionPipeline: Extracts the time course data from the pre and post scan for each segment producing an output .csv file
