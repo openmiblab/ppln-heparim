@@ -45,5 +45,5 @@ def run(build, logfile):
 
 
 if __name__ == '__main__':
-    build = r"C:\Users\md1spsx\Documents\Data\iBEAt_Build"
+    build = r"C:\Users\mahil\OneDrive\Documents\Uni Yr 4\Final Proj\VScode - MRI\data"
     pipe.run_stage(run, build, PIPELINE, __file__)
