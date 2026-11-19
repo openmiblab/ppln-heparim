@@ -37,7 +37,7 @@ PROJECT = 'HEPARIM'
 
 # Set to a list such as ['HEPARIM_020'] to test on a few patients first.
 # Set to None to process every patient.
-SUBJECTS = ['HEPARIM_020']
+SUBJECTS = None
 
 # Patients to skip (e.g. data that needs special handling)
 EXCLUDE = []
