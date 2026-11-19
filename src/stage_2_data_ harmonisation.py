@@ -1,22 +1,5 @@
 """
 Create a clean (harmonized) DICOM database for the HEPARIM GRASP DCE data.
-
-Input  (from stage_1_download_m):
-    <build>/grasp/stage_1_download_m/HEPARIM/<patient>/<patient>_<date>/series_*.zip
-
-    Each visit folder contains:
-      - series_1001-MR1.zip ... series_1215-MR1.zip : one GRASP time point each (reconstruction 1)
-      - series_1001-MR2.zip ... series_1215-MR2.zip : one GRASP time point each (reconstruction 2)
-      - series_22.zip ... series_32.zip             : single delayed time points (scanner-reconstructed)
-
-Output (this stage):
-    <build>/grasp/stage_2_data_harmonization/HEPARIM  (a dbdicom database)
-        <patient>/<visit>/DCE_dynamic_MR1   all MR1 time points merged into one 4D series
-        <patient>/<visit>/DCE_dynamic_MR2   all MR2 time points merged into one 4D series
-        <patient>/<visit>/DCE_delayed_<n>   each delayed time point as its own series
-
-Each output series is deleted before it is written, so the stage can be
-re-run safely without clearing the output folder first.
 """
 import os
 import re
@@ -35,35 +18,26 @@ PIPELINE = 'grasp'
 DOWNLOAD_STAGE = 'stage_1_download_m' 
 PROJECT = 'HEPARIM'
 
-#SUBJECTS = ['HEPARIM_020']
+#SUBJECTS = ['HEPARIM_020'] for testing
 SUBJECTS = None
 
-# Patients to skip (e.g. data that needs special handling)
+# data to skip
 EXCLUDE = []
 
-# Which parts to write to the clean database
-INCLUDE_DYNAMIC = True      # GRASP dynamics (MR1 and MR2)
-INCLUDE_DELAYED = True      # single delayed time points (series_22 etc.) potentially needs changin to false to putdelayed scans as separate series
+# which data to include in the harmonized database
+INCLUDE_DYNAMIC = True      # MR1 and MR2
+INCLUDE_DELAYED = True      # include dealyed scans
 
-# File name patterns from the download stage
-DYNAMIC_ZIP = re.compile(r'series_(\d+)-MR(\d+)\.zip$')     # e.g. series_1001-MR1.zip
-DELAYED_ZIP = re.compile(r'series_(\d+)\.zip$')             # e.g. series_22.zip
+# file name patterns from download stage
+DYNAMIC_ZIP = re.compile(r'series_(\d+)-MR(\d+)\.zip$')     
+DELAYED_ZIP = re.compile(r'series_(\d+)\.zip$')             
 
 
 def visit_name(index, date):
-    """
-    Name of the study (visit) in the clean database.
-    index: 1 for the first visit by date, 2 for the second, ...
-    date:  'YYYYMMDD' from the folder name
-
-    Change this one line if Steven prefers another naming scheme,
-    e.g. return date, or return ['Baseline', 'Followup'][index - 1]
-    """
     return f'Visit_{index}'
 
 
 def visits_of(patient_path):
-    """Return the visit folders of a patient sorted by date: [(date, path), ...]"""
     visits = []
     for folder in patient_path.iterdir():
         if not folder.is_dir():
@@ -74,7 +48,6 @@ def visits_of(patient_path):
 
 
 def copy_zip(zip_path, destination, temp_folder):
-    """Unzip one series, copy it into the destination series, then clean up."""
     extract_to = os.path.join(temp_folder, zip_path.stem)
     try:
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
@@ -89,9 +62,6 @@ def copy_zip(zip_path, destination, temp_folder):
 
 def harmonize_visit(visit_path, database, patient_id, study, temp_folder):
     zips = list(visit_path.glob('series_*.zip'))
-
-    # GRASP dynamics: one destination series per reconstruction (MR1, MR2),
-    # time points added in order of series number (= order in time)
     if INCLUDE_DYNAMIC:
         dynamic = {}
         for zip_path in zips:
@@ -108,8 +78,6 @@ def harmonize_visit(visit_path, database, patient_id, study, temp_folder):
             for number, zip_path in frames:
                 copy_zip(zip_path, destination, temp_folder)
 
-    # Delayed time points: each one kept as its own series
-    # (they do not all have the same number of slices)
     if INCLUDE_DELAYED:
         delayed = []
         for zip_path in zips:
