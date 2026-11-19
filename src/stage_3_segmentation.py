@@ -16,7 +16,7 @@ from miblab import pipe
 
 
 PIPELINE = 'grasp'
-HARMONIZATION_STAGE = 'stage_2_data_harmonization'
+HARMONIZATION_STAGE = 'stage_2_data_harmonisation'
 PROJECT = 'HEPARIM'
 
 SUBJECTS = ['HEPARIM_020']
