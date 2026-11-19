@@ -15,8 +15,8 @@ Output (this stage):
         <patient>/<visit>/DCE_dynamic_MR2   all MR2 time points merged into one 4D series
         <patient>/<visit>/DCE_delayed_<n>   each delayed time point as its own series
 
-NOTE: delete the stage_2_data_harmonization output folder before re-running,
-otherwise time points are copied in a second time.
+Each output series is deleted before it is written, so the stage can be
+re-run safely without clearing the output folder first.
 """
 import os
 import re
@@ -104,6 +104,7 @@ def harmonize_visit(visit_path, database, patient_id, study, temp_folder):
         for recon, frames in sorted(dynamic.items()):
             frames.sort()
             destination = [database, patient_id, study, f'DCE_dynamic_MR{recon}']
+            db.delete(destination, not_exists_ok=True)    # remove any old copy first
             logging.info(f'{patient_id} {study}: writing {len(frames)} time points to DCE_dynamic_MR{recon}')
             for number, zip_path in frames:
                 copy_zip(zip_path, destination, temp_folder)
@@ -119,6 +120,7 @@ def harmonize_visit(visit_path, database, patient_id, study, temp_folder):
         delayed.sort()
         for n, (number, zip_path) in enumerate(delayed, 1):
             destination = [database, patient_id, study, f'DCE_delayed_{n}']
+            db.delete(destination, not_exists_ok=True)    # remove any old copy first
             logging.info(f'{patient_id} {study}: writing series_{number} to DCE_delayed_{n}')
             copy_zip(zip_path, destination, temp_folder)
 
