@@ -39,9 +39,8 @@ PIPELINE = 'grasp'
 HARMONIZATION_STAGE = 'stage_2_data_harmonization'
 PROJECT = 'HEPARIM'
 
-# Set to a list such as ['HEPARIM_020'] to test on a few patients first.
-# Set to None to process every patient.
 SUBJECTS = ['HEPARIM_020']
+#SUBJECTS = None
 
 # Patients to skip
 EXCLUDE = []
