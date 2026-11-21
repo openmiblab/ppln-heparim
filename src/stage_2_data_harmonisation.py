@@ -97,6 +97,10 @@ def heparim(build, dir_output):
     database = os.path.join(dir_output, PROJECT)
     os.makedirs(database, exist_ok=True)
 
+    # One empty marker file per finished visit, so a re-run can skip it
+    done_dir = os.path.join(dir_output, 'done')
+    os.makedirs(done_dir, exist_ok=True)
+
     patients = sorted(p for p in download_path.iterdir() if p.is_dir())
     if SUBJECTS is not None:
         patients = [p for p in patients if p.name in SUBJECTS]
@@ -109,8 +113,13 @@ def heparim(build, dir_output):
                 continue
             for index, (date, visit_path) in enumerate(visits_of(patient_path), 1):
                 study = visit_name(index, date)
+                marker = os.path.join(done_dir, f'{patient_id}_{study}.done')
+                if os.path.exists(marker):
+                    logging.info(f'{patient_id} {study} ({date}): already done, skipping')
+                    continue
                 try:
                     harmonize_visit(visit_path, database, patient_id, study, temp_folder)
+                    open(marker, 'w').close()
                     logging.info(f'{patient_id} {study} ({date}): done')
                 except Exception:
                     logging.exception(f'{patient_id} {study} ({date}): error')
