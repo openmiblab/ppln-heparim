@@ -3,6 +3,7 @@ Create a clean (harmonized) DICOM database for the HEPARIM GRASP DCE data.
 """
 import os
 import re
+import csv
 import shutil
 import logging
 import zipfile
@@ -15,7 +16,7 @@ from miblab import pipe
 
 
 PIPELINE = 'grasp'
-DOWNLOAD_STAGE = 'stage_1_download_m' 
+DOWNLOAD_STAGE = 'stage_1_download_m'
 PROJECT = 'HEPARIM'
 
 #SUBJECTS = ['HEPARIM_020'] for testing
@@ -28,9 +29,10 @@ EXCLUDE = []
 INCLUDE_DYNAMIC = True      # MR1 and MR2
 INCLUDE_DELAYED = True      # include dealyed scans
 
-# file name patterns from download stage
-DYNAMIC_ZIP = re.compile(r'series_(\d+)-MR(\d+)\.zip$')     
-DELAYED_ZIP = re.compile(r'series_(\d+)\.zip$')             
+# any dynamic group with fewer time points than this is incomplete and skipped
+MIN_FRAMES = 200
+
+ZIP_NAME = re.compile(r'series_(\d+)(?:-MR(\d+))?\.zip$')
 
 
 def visit_name(index, date):
@@ -47,6 +49,25 @@ def visits_of(patient_path):
     return sorted(visits)
 
 
+def group_series(visit_path):
+    dynamic, delayed = {}, []
+    for zip_path in visit_path.glob('series_*.zip'):
+        m = ZIP_NAME.match(zip_path.name)
+        if not m:
+            logging.warning(f'Unexpected file name, ignored: {zip_path}')
+            continue
+        number = int(m.group(1))
+        mr = int(m.group(2)) if m.group(2) else 0
+        if number >= 1000:
+            dynamic.setdefault((number // 1000, mr), []).append((number, zip_path))
+        else:
+            delayed.append((mr, number, zip_path))
+    for frames in dynamic.values():
+        frames.sort()
+    delayed.sort()
+    return dynamic, delayed
+
+
 def copy_zip(zip_path, destination, temp_folder):
     extract_to = os.path.join(temp_folder, zip_path.stem)
     try:
@@ -60,45 +81,61 @@ def copy_zip(zip_path, destination, temp_folder):
         shutil.rmtree(extract_to, ignore_errors=True)
 
 
-def harmonize_visit(visit_path, database, patient_id, study, temp_folder):
-    zips = list(visit_path.glob('series_*.zip'))
-    if INCLUDE_DYNAMIC:
-        dynamic = {}
-        for zip_path in zips:
-            m = DYNAMIC_ZIP.match(zip_path.name)
-            if m:
-                number, recon = int(m.group(1)), int(m.group(2))
-                dynamic.setdefault(recon, []).append((number, zip_path))
+def source_label(block, mr, frames):
+    first, last = frames[0][0], frames[-1][0]
+    label = f'series_{first}-{last}'
+    return label + (f' (MR{mr})' if mr else '')
 
-        for recon, frames in sorted(dynamic.items()):
-            frames.sort()
-            destination = [database, patient_id, study, f'DCE_dynamic_MR{recon}']
+
+def harmonize_visit(visit_path, database, patient_id, study, date, temp_folder, rows):
+    dynamic, delayed = group_series(visit_path)
+
+    if INCLUDE_DYNAMIC:
+        k = 0
+        for (block, mr), frames in sorted(dynamic.items()):
+            source = source_label(block, mr, frames)
+            if len(frames) < MIN_FRAMES:
+                logging.warning(f'{patient_id} {study}: {source} has only {len(frames)} '
+                                f'time points (< {MIN_FRAMES}), skipped')
+                rows.append([patient_id, study, date, '', source, len(frames), 'skipped: incomplete'])
+                continue
+            k += 1
+            name = f'DCE_dynamic_{k}'
+            destination = [database, patient_id, study, name]
             db.delete(destination, not_exists_ok=True)    # remove any old copy first
-            logging.info(f'{patient_id} {study}: writing {len(frames)} time points to DCE_dynamic_MR{recon}')
+            logging.info(f'{patient_id} {study}: writing {len(frames)} time points from {source} to {name}')
             for number, zip_path in frames:
                 copy_zip(zip_path, destination, temp_folder)
+            rows.append([patient_id, study, date, name, source, len(frames), 'ok'])
 
     if INCLUDE_DELAYED:
-        delayed = []
-        for zip_path in zips:
-            m = DELAYED_ZIP.match(zip_path.name)
-            if m:
-                delayed.append((int(m.group(1)), zip_path))
-        delayed.sort()
-        for n, (number, zip_path) in enumerate(delayed, 1):
-            destination = [database, patient_id, study, f'DCE_delayed_{n}']
+        counter = {}
+        for mr, number, zip_path in delayed:
+            counter[mr] = counter.get(mr, 0) + 1
+            name = f'DCE_delayed_{counter[mr]}' + (f'_MR{mr}' if mr else '')
+            destination = [database, patient_id, study, name]
             db.delete(destination, not_exists_ok=True)    # remove any old copy first
-            logging.info(f'{patient_id} {study}: writing series_{number} to DCE_delayed_{n}')
+            logging.info(f'{patient_id} {study}: writing series_{number} to {name}')
             copy_zip(zip_path, destination, temp_folder)
+            source = f'series_{number}' + (f' (MR{mr})' if mr else '')
+            rows.append([patient_id, study, date, name, source, 1, 'ok'])
+
+
+def append_rows(csv_file, rows):
+    new = not os.path.exists(csv_file)
+    with open(csv_file, 'a', newline='') as f:
+        writer = csv.writer(f)
+        if new:
+            writer.writerow(['patient', 'visit', 'date', 'output_series', 'source', 'n_series', 'status'])
+        writer.writerows(rows)
 
 
 def heparim(build, dir_output):
     download_path = Path(build) / PIPELINE / DOWNLOAD_STAGE / PROJECT
-    database = os.path.join(dir_output, PROJECT)
-    os.makedirs(database, exist_ok=True)
-
-    # One empty marker file per finished visit, so a re-run can skip it
+    databases = os.path.join(dir_output, PROJECT)
     done_dir = os.path.join(dir_output, 'done')
+    csv_file = os.path.join(dir_output, 'series_map.csv')
+    os.makedirs(databases, exist_ok=True)
     os.makedirs(done_dir, exist_ok=True)
 
     patients = sorted(p for p in download_path.iterdir() if p.is_dir())
@@ -107,18 +144,21 @@ def heparim(build, dir_output):
 
     with tempfile.TemporaryDirectory() as temp_folder:
         for patient_path in patients:
-            patient_id = patient_path.name           # IDs kept as they are, e.g. HEPARIM_020
+            patient_id = patient_path.name
             if patient_id in EXCLUDE:
                 logging.info(f'Skipping {patient_id} (in EXCLUDE list)')
                 continue
+            database = os.path.join(databases, patient_id)
             for index, (date, visit_path) in enumerate(visits_of(patient_path), 1):
                 study = visit_name(index, date)
                 marker = os.path.join(done_dir, f'{patient_id}_{study}.done')
                 if os.path.exists(marker):
                     logging.info(f'{patient_id} {study} ({date}): already done, skipping')
                     continue
+                rows = []
                 try:
-                    harmonize_visit(visit_path, database, patient_id, study, temp_folder)
+                    harmonize_visit(visit_path, database, patient_id, study, date, temp_folder, rows)
+                    append_rows(csv_file, rows)
                     open(marker, 'w').close()
                     logging.info(f'{patient_id} {study} ({date}): done')
                 except Exception:

@@ -29,13 +29,14 @@ REFERENCE = 'dynamic'
 #REFERENCE = 'delayed' in case i need delayed data
 DYNAMIC_SERIES = 'DCE_dynamic_MR1'      # or MR2?
 DYNAMIC_LAST_FRAMES = 20                
-DELAYED_SERIES = 'DCE_delayed_8'        
+DELAYED_SERIES = 'DCE_delayed_8'     
 
-SEGMENT_LIVER_SEGMENTS = True           
-SEGMENT_LIVER_VESSELS = False           # change to true if approved
 
-DEVICE = 'cpu'            
-LIVER_LABEL = 5             
+SEGMENT_LIVER_SEGMENTS = True
+SEGMENT_LIVER_VESSELS = False          # change to true if approved
+
+DEVICE = 'cpu'              
+LIVER_LABEL = 5            
 
 MOSAIC_VIEWS = [(0, 1, 2), (0, 2, 1), (2, 1, 0)]
 MOSAIC_MARGIN = [15, 5, 2]
@@ -108,7 +109,7 @@ def segment_visit(harm_db, out_db, mosaic_dir, patient_id, study):
 
     write(reference, affine, [out_db, patient_id, study, 'DCE_reference'], source_series)
     nifti = to_nifti(reference, affine)
-    dyn_series = source_series      
+    dyn_series = source_series
 
     logging.info(f'{patient_id} {study}: running total_mr')
     total = run_totseg(nifti, 'total_mr')
@@ -136,29 +137,36 @@ def segment_visit(harm_db, out_db, mosaic_dir, patient_id, study):
 
 
 def heparim(build, dir_output):
-    harm_db = os.path.join(build, PIPELINE, HARMONIZATION_STAGE, PROJECT)
-    out_db = os.path.join(dir_output, PROJECT)
+    harm_root = os.path.join(build, PIPELINE, HARMONIZATION_STAGE, PROJECT)
+    out_root = os.path.join(dir_output, PROJECT)
     mosaic_dir = os.path.join(dir_output, 'mosaics')
-    os.makedirs(out_db, exist_ok=True)
+    os.makedirs(out_root, exist_ok=True)
     os.makedirs(mosaic_dir, exist_ok=True)
 
-    visits = sorted({
-        (s[1], series_name(s[2]))
-        for s in db.series(harm_db)
-        if series_name(s[3]) == reference_series_name()
-    })
-
-    for patient_id, study in visits:
+    patients = sorted(f.name for f in os.scandir(harm_root) if f.is_dir())
+    for patient_id in patients:
         if SUBJECTS is not None and patient_id not in SUBJECTS:
             continue
         if patient_id in EXCLUDE:
             logging.info(f'Skipping {patient_id} (in EXCLUDE list)')
             continue
-        try:
-            segment_visit(harm_db, out_db, mosaic_dir, patient_id, study)
-            logging.info(f'{patient_id} {study}: done')
-        except Exception:
-            logging.exception(f'{patient_id} {study}: error')
+        harm_db = os.path.join(harm_root, patient_id)
+        out_db = os.path.join(out_root, patient_id)
+        os.makedirs(out_db, exist_ok=True)
+
+        studies = sorted({
+            series_name(s[2])
+            for s in db.series(harm_db)
+            if series_name(s[3]) == reference_series_name()
+        })
+        if not studies:
+            logging.warning(f'{patient_id}: no {reference_series_name()} series, skipped')
+        for study in studies:
+            try:
+                segment_visit(harm_db, out_db, mosaic_dir, patient_id, study)
+                logging.info(f'{patient_id} {study}: done')
+            except Exception:
+                logging.exception(f'{patient_id} {study}: error')
 
 
 def run(build, logfile):
