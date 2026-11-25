@@ -27,7 +27,7 @@ EXCLUDE = []
 
 REFERENCE = 'dynamic'
 #REFERENCE = 'delayed' in case i need delayed data
-DYNAMIC_SERIES = 'DCE_dynamic_MR1'      # or MR2?
+DYNAMIC_SERIES = 'DCE_dynamic_1'      # or MR2?
 DYNAMIC_LAST_FRAMES = 20                
 DELAYED_SERIES = 'DCE_delayed_8'     
 
